@@ -169,7 +169,4 @@ function sendEmailWithFruitData() {
     $fruits = extractDataFromDatabase();
     sendEmail($fruits);
 }
-
-// Calling the main function to send email with fruit data
-sendEmailWithFruitData();
 ?>

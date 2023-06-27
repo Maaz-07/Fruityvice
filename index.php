@@ -1,120 +1,71 @@
-<?php
-require 'D:\XAMPP\htdocs\Fruityvice\vendor\phpmailer\phpmailer\src\PHPMailer.php';
-require 'D:\XAMPP\htdocs\Fruityvice\vendor\phpmailer\phpmailer\src\SMTP.php';
-require 'D:\XAMPP\htdocs\Fruityvice\vendor\phpmailer\phpmailer\src\Exception.php';
+<?php include 'email.php'; ?>
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fruit Data</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
 
-// Retrieve fruit data from the API
-$url = 'https://fruityvice.com/api/fruit/all';
-$ch = curl_init();
+        th, td {
+            text-align: left;
+            padding: 8px;
+        }
 
-curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
 
-$response = curl_exec($ch);
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
 
-if (curl_errno($ch)) {
-    $error_message = curl_error($ch);
-    echo "Error: " . $error_message;
-    curl_close($ch);
-    exit;
-}
+<?php sendEmailWithFruitData(); ?>
+<?php $fruits = extractDataFromDatabase(); ?>
 
-curl_close($ch);
+// Display Fruits
+<?php if (!empty($fruits)): ?>
+    <table>
+        <tr>
+            <th>Serial Number</th>
+            <th>Name</th>
+            <th>ID</th>
+            <th>Family</th>
+            <th>Genus</th>
+            <th>Order</th>
+            <th>Nutritions</th>
+        </tr>
+        <?php foreach ($fruits as $key => $fruit): ?>
+            <tr>
+                <td><?php echo $key + 1; ?></td>
+                <td><?php echo $fruit['name']; ?></td>
+                <td><?php echo $fruit['id']; ?></td>
+                <td><?php echo $fruit['family']; ?></td>
+                <td><?php echo $fruit['genus']; ?></td>
+                <td><?php echo $fruit['order']; ?></td>
+                <td>
+                    <?php if (isset($fruit['nutritions'])): ?>
+                        <?php $nutritions = $fruit['nutritions']; ?>
+                        Calories: <?php echo $nutritions['calories']; ?><br>
+                        Fat: <?php echo $nutritions['fat']; ?><br>
+                        Sugar: <?php echo $nutritions['sugar']; ?><br>
+                        Carbohydrates: <?php echo $nutritions['carbohydrates']; ?><br>
+                        Protein: <?php echo $nutritions['protein']; ?><br>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+<?php else: ?>
+    <p>No fruit data found.</p>
+<?php endif; ?>
 
-$data = json_decode($response, true);
-if (!$data) {
-    echo "No fruit data found.";
-    exit;
-}
-
-// Save fruit data to the MySQL database
-$hostname = 'localhost';
-$database = 'fruityvice';
-$username = 'root';
-$password = '';
-$connection = mysqli_connect($hostname, $username, $password, $database);
-
-if (mysqli_connect_errno()) {
-    $error_message = mysqli_connect_error();
-    die("Failed to connect to MySQL: " . $error_message);
-}
-
-foreach ($data as $fruit) {
-    $sql = "INSERT INTO fruits (id, name, family, genus, order_name, nutritions) 
-            VALUES (" . $fruit['id'] . ", '" . mysqli_real_escape_string($connection, $fruit['name']) . "', '" . mysqli_real_escape_string($connection, $fruit['family']) . "', '" . mysqli_real_escape_string($connection, $fruit['genus']) . "', '" . mysqli_real_escape_string($connection, $fruit['order']) . "', '" . mysqli_real_escape_string($connection, json_encode($fruit['nutritions'])) . "')";
-
-    if (mysqli_query($connection, $sql)) {
-        echo "Fruit saved to the database successfully.<br>";
-    } else {
-        $error_message = mysqli_error($connection);
-        echo "Error: " . $error_message;
-    }
-}
-
-// Extract fruit data from the database
-$query = "SELECT * FROM fruits";
-$result = mysqli_query($connection, $query);
-$fruits = array();
-
-if (mysqli_num_rows($result) > 0) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $fruit = array(
-            'name' => $row['name'],
-            'id' => $row['id'],
-            'family' => $row['family'],
-            'genus' => $row['genus'],
-            'order' => $row['order_name'],
-            'nutritions' => json_decode($row['nutritions'], true)
-        );
-        $fruits[] = $fruit;
-    }
-}
-
-mysqli_close($connection);
-
-// Send email using PHPMailer
-$mail = new PHPMailer();
-$mail->isSMTP();
-$mail->Host = 'smtp.gmail.com';
-$mail->SMTPAuth = true;
-$mail->Username = 'maazchoudhry07@gmail.com';
-$mail->Password = 'wwgnrdmyqaskydmz';
-$mail->SMTPSecure = 'tls';
-$mail->Port = 587;
-$mail->setFrom('maazchoudhry07@gmail.com', 'Maaz');
-$mail->addAddress('swearengen1204@gmail.com', 'Al');
-$mail->Subject = 'Fruit Data from Fruityvice API';
-
-// Compose the email body
-$message = '';
-foreach ($fruits as $fruit) {
-    $message .= "Name: " . $fruit['name'] . "<br>";
-    $message .= "ID: " . $fruit['id'] . "<br>";
-    $message .= "Family: " . $fruit['family'] . "<br>";
-    $message .= "Genus: " . $fruit['genus'] . "<br>";
-    $message .= "Order: " . $fruit['order'] . "<br>";
-    if (isset($fruit['nutritions'])) {
-        $nutritions = $fruit['nutritions'];
-        $message .= "Nutritions:<br>";
-        $message .= "Calories: " . $nutritions['calories'] . "<br>";
-        $message .= "Fat: " . $nutritions['fat'] . "<br>";
-        $message .= "Sugar: " . $nutritions['sugar'] . "<br>";
-        $message .= "Carbohydrates: " . $nutritions['carbohydrates'] . "<br>";
-        $message .= "Protein: " . $nutritions['protein'] . "<br>";
-    }
-    $message .= "<br>";
-}
-
-$mail->Body = $message;
-$mail->isHTML(true);
-
-if ($mail->send()) {
-    echo 'Email sent successfully.';
-} else {
-    echo 'Error sending email: ' . $mail->ErrorInfo;
-}
-?>
+</body>
+</html>

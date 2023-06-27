@@ -23,7 +23,6 @@ function getDataFromAPI() {
         curl_close($ch);
         exit;
     }
-
     curl_close($ch);
 
     $data = json_decode($response, true);

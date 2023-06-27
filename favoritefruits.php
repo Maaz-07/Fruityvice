@@ -22,7 +22,7 @@ function getFruitById($fruitId)
     }
     $query = "SELECT * FROM fruits WHERE id = '$fruitId'";
     $result = mysqli_query($conn, $query);
-    
+
     if (!$result) {
         die('Failed to fetch fruit from the database: ' . mysqli_error($conn));
     }
@@ -57,7 +57,8 @@ function getFruitById($fruitId)
             width: 100%;
         }
 
-        th, td {
+        th,
+        td {
             text-align: left;
             padding: 8px;
         }
@@ -72,17 +73,22 @@ function getFruitById($fruitId)
         }
 
         .pagination {
-            display: inline-block;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
         .pagination a {
-            color: black;
-            float: left;
-            padding: 8px 16px;
+            display: inline-block;
+            padding: 5px 15px;
+            background-color: #4CAF50;
+            color: white;
             text-decoration: none;
-            transition: background-color .3s;
-            border: 1px solid #ddd;
-            margin: 0 4px;
+            border-radius: 5px;
+            margin-right: 5px;
         }
 
         .pagination a.active {
@@ -92,26 +98,47 @@ function getFruitById($fruitId)
         }
 
         .pagination a:hover:not(.active) {
-            background-color: #ddd;
+            background-color: lightgreen;
+        }
+
+        .bottom-left {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+        }
+
+        .favorite-fruits-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .bottom-right {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
         }
     </style>
 </head>
 <body>
-<h1>Favorite Fruits</h1>
-<?php if (!empty($fruits)): ?>
-    <table>
-        <tr>
-            <th>Serial Number</th>
-            <th>Name</th>
-            <th>ID</th>
-            <th>Family</th>
-            <th>Genus</th>
-            <th>Order</th>
-            <th>Nutritions</th>
-        </tr>
-        <?php foreach ($fruits as $key => $fruitId): ?>
-            <?php $fruit = getFruitById($fruitId); ?>
+    <h1>Favorite Fruits</h1>
+    <?php if (!empty($fruits)) : ?>
+        <table>
             <tr>
+                <th>Serial Number</th>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Family</th>
+                <th>Genus</th>
+                <th>Order</th>
+                <th>Nutritions</th>
+            </tr>
+            <?php foreach ($fruits as $key => $fruitId) : ?>
+                <?php $fruit = getFruitById($fruitId); ?>
+                <tr>
                     <td><?php echo $key + 1; ?></td>
                     <td><?php echo $fruit['name']; ?></td>
                     <td><?php echo $fruit['id']; ?></td>
@@ -127,17 +154,17 @@ function getFruitById($fruitId)
                             Protein: <?php echo $fruit['nutritions']['protein']; ?><br>
                         <?php endif; ?>
                     </td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
-    <div class="pagination">
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?php echo $i; ?>" <?php if ($i == $currentPage) echo 'class="active"'; ?>><?php echo $i; ?></a>
-        <?php endfor; ?>
-    </div>
-<?php else: ?>
-    <p>No favorite fruits found.</p>
-<?php endif; ?>
-<a href="index.php">Back to Fruit Data</a>
+                </tr>
+            <?php endforeach; ?>
+        </table>
+        <div class="pagination bottom-left">
+            <?php for ($i = 1; $i <= $totalPages; $i++) : ?>
+                <a href="?page=<?php echo $i; ?>" <?php if ($i == $currentPage) echo 'class="active"'; ?>><?php echo $i; ?></a>
+            <?php endfor; ?>
+        </div>
+    <?php else : ?>
+        <p>No favorite fruits found.</p>
+    <?php endif; ?>
+    <a href="index.php" class="favorite-fruits-link bottom-right">Back to Fruit Data</a>
 </body>
 </html>

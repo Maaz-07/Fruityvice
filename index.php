@@ -166,6 +166,6 @@ function filterFruits($name, $family)
     <?php else : ?>
         <p>No fruit data found.</p>
     <?php endif; ?>
-    <a href="favorite-fruits.php">Favorite Fruits</a>
+    <a href="favoritefruits.php">Favorite Fruits</a>
 </body>
 </html>

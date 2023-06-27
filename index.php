@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'email.php';
+
 if (!isset($_SESSION['email_sent'])) {
     sendEmailWithFruitData();
     $_SESSION['email_sent'] = true;
@@ -10,7 +11,7 @@ $fruitsPerPage = 6;
 $filterName = isset($_GET['filter_name']) ? $_GET['filter_name'] : '';
 $filterFamily = isset($_GET['filter_family']) ? $_GET['filter_family'] : '';
 
-if (!isset($_SESSION['fruits'])) { 
+if (!isset($_SESSION['fruits'])) {
     $fruits = extractDataFromDatabase();
     $_SESSION['fruits'] = $fruits;
 } else {
@@ -25,6 +26,19 @@ $currentPage = isset($_GET['page']) ? $_GET['page'] : 1;
 $offset = ($currentPage - 1) * $fruitsPerPage;
 $fruits = array_slice($filteredFruits, $offset, $fruitsPerPage);
 
+$favoriteFruits = isset($_SESSION['favorite_fruits']) ? $_SESSION['favorite_fruits'] : [];
+
+if (isset($_GET['action']) && $_GET['action'] === 'toggle_favorite' && isset($_GET['fruit_id'])) {
+    $fruitId = $_GET['fruit_id'];
+    if (in_array($fruitId, $favoriteFruits)) {
+        $index = array_search($fruitId, $favoriteFruits);
+        unset($favoriteFruits[$index]);
+    } else {
+        $favoriteFruits[] = $fruitId;
+    }
+    $_SESSION['favorite_fruits'] = $favoriteFruits;
+}
+
 // Filter Fruits
 function filterFruits($name, $family)
 {
@@ -33,17 +47,14 @@ function filterFruits($name, $family)
     foreach ($fruits as $fruit) {
         $fruitName = strtolower($fruit['name']);
         $fruitFamily = strtolower($fruit['family']);
-
         $nameMatch = empty($name) || stripos($fruitName, strtolower($name)) !== false;
         $familyMatch = empty($family) || stripos($fruitFamily, strtolower($family)) !== false;
-
         if ($nameMatch && $familyMatch) {
             $filteredFruits[] = $fruit;
         }
     }
     return $filteredFruits;
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -56,7 +67,8 @@ function filterFruits($name, $family)
             width: 100%;
         }
 
-        th, td {
+        th,
+        td {
             text-align: left;
             padding: 8px;
         }
@@ -96,54 +108,64 @@ function filterFruits($name, $family)
     </style>
 </head>
 <body>
-<form method="get">
-    <label for="filter_name">Filter by Name:</label>
-    <input type="text" id="filter_name" name="filter_name" value="<?php echo $filterName; ?>">
-    <label for="filter_family">Filter by Family:</label>
-    <input type="text" id="filter_family" name="filter_family" value="<?php echo $filterFamily; ?>">
-    <input type="submit" value="Filter">
-</form>
+    <form method="get">
+        <label for="filter_name">Filter by Name:</label>
+        <input type="text" id="filter_name" name="filter_name" value="<?php echo $filterName; ?>">
+        <label for="filter_family">Filter by Family:</label>
+        <input type="text" id="filter_family" name="filter_family" value="<?php echo $filterFamily; ?>">
+        <input type="submit" value="Filter">
+    </form>
 
-<?php if (!empty($fruits)): ?>
-    <table>
-        <tr>
-            <th>Serial Number</th>
-            <th>Name</th>
-            <th>ID</th>
-            <th>Family</th>
-            <th>Genus</th>
-            <th>Order</th>
-            <th>Nutritions</th>
-        </tr>
-        <?php foreach ($fruits as $key => $fruit): ?>
+    <?php if (!empty($fruits)) : ?>
+        <table>
             <tr>
-                <td><?php echo $key + 1; ?></td>
-                <td><?php echo $fruit['name']; ?></td>
-                <td><?php echo $fruit['id']; ?></td>
-                <td><?php echo $fruit['family']; ?></td>
-                <td><?php echo $fruit['genus']; ?></td>
-                <td><?php echo $fruit['order']; ?></td>
-                <td>
-                    <?php if (isset($fruit['nutritions'])): ?>
-                        Calories: <?php echo $fruit['nutritions']['calories']; ?><br>
-                        Fat: <?php echo $fruit['nutritions']['fat']; ?><br>
-                        Sugar: <?php echo $fruit['nutritions']['sugar']; ?><br>
-                        Carbohydrates: <?php echo $fruit['nutritions']['carbohydrates']; ?><br>
-                        Protein: <?php echo $fruit['nutritions']['protein']; ?><br>
-                    <?php endif; ?>
-                </td>
+                <th>Serial Number</th>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Family</th>
+                <th>Genus</th>
+                <th>Order</th>
+                <th>Nutritions</th>
+                <th>Favorite</th>
             </tr>
-        <?php endforeach; ?>
-    </table>
+            <?php foreach ($fruits as $key => $fruit) : ?>
+                <tr>
+                    <td><?php echo $key + 1; ?></td>
+                    <td><?php echo $fruit['name']; ?></td>
+                    <td><?php echo $fruit['id']; ?></td>
+                    <td><?php echo $fruit['family']; ?></td>
+                    <td><?php echo $fruit['genus']; ?></td>
+                    <td><?php echo $fruit['order']; ?></td>
+                    <td>
+                        <?php if (isset($fruit['nutritions'])) : ?>
+                            Calories: <?php echo $fruit['nutritions']['calories']; ?><br>
+                            Fat: <?php echo $fruit['nutritions']['fat']; ?><br>
+                            Sugar: <?php echo $fruit['nutritions']['sugar']; ?><br>
+                            Carbohydrates: <?php echo $fruit['nutritions']['carbohydrates']; ?><br>
+                            Protein: <?php echo $fruit['nutritions']['protein']; ?><br>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <a href="?page=<?php echo $currentPage; ?>&action=toggle_favorite&fruit_id=<?php echo $fruit['id']; ?>">
+                            <?php if (in_array($fruit['id'], $favoriteFruits)) : ?>
+                                &#9733;
+                            <?php else : ?>
+                                &#9734;
+                            <?php endif; ?>
+                        </a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </table>
 
-    <div class="pagination">
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?php echo $i; ?>&filter_name=<?php echo $filterName; ?>&filter_family=<?php echo $filterFamily; ?>" <?php if ($i == $currentPage) echo 'class="active"'; ?>><?php echo $i; ?></a>
-        <?php endfor; ?>
-    </div>
-<?php else: ?>
-    <p>No fruit data found.</p>
-<?php endif; ?>
-
+        <div class="pagination">
+            <?php for ($i = 1; $i <= $totalPages; $i++) : ?>
+                <a href="?page=<?php echo $i; ?>&filter_name=<?php echo $filterName; ?>&filter_family=<?php echo $filterFamily; ?>" <?php if ($i == $currentPage) echo 'class="active"'; ?>><?php echo $i; ?></a>
+            <?php endfor; ?>
+        </div>
+    <?php else : ?>
+        <p>No fruit data found.</p>
+    <?php endif; ?>
+    <a href="favorite-fruits.php">Favorite Fruits</a>
 </body>
 </html>

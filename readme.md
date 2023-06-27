@@ -44,7 +44,7 @@ The FruityFaves web application allows users to explore a wide variety of fruits
 6. To remove a fruit from your favorites list simply click the star button again.
 7. Navigate to the "Favorite Fruits" page to view your selected favorite fruits and their nutrition facts.
 
-## Contributing
+## Contributions
 
 Contributions to the FruityFaves web application are welcome! If you have any ideas, suggestions, or improvements, please submit a pull request or open an issue.
 
